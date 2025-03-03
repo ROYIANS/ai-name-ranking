@@ -17,7 +17,7 @@ export const Settings = ({ isOpen, onClose }: SettingsProps) => {
   const [settings, setSettings] = useState<ApiSettings>({
     apiUrl: '',
     apiKey: '',
-    model: 'gpt-3.5-turbo',
+    model: 'DeepSeek-R1',
   });
 
   // 加载设置
@@ -44,7 +44,7 @@ export const Settings = ({ isOpen, onClose }: SettingsProps) => {
     setSettings({
       apiUrl: '',
       apiKey: '',
-      model: 'gpt-3.5-turbo',
+      model: 'DeepSeek-R1',
     });
   };
 
@@ -95,10 +95,10 @@ export const Settings = ({ isOpen, onClose }: SettingsProps) => {
               onChange={(e) => setSettings({ ...settings, model: e.target.value })}
               className="modern-input"
             >
+              <option value="DeepSeek-R1">DeepSeek-R1</option>
               <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
               <option value="gpt-4">GPT-4</option>
               <option value="gpt-4-turbo">GPT-4 Turbo</option>
-              <option value="DeepSeek-R1">DeepSeek-R1</option>
               <option value="claude-3-opus-20240229">Claude 3 Opus</option>
               <option value="claude-3-sonnet-20240229">Claude 3 Sonnet</option>
               <option value="claude-3-haiku-20240307">Claude 3 Haiku</option>

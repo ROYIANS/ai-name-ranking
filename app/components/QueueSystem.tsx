@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { NameAnalysis } from './NameAnalysis';
 import { Settings } from './Settings';
 import { CatInteraction } from './CatInteraction';
+import { LoadingState } from './LoadingState';
 
 // 从NameAnalysis导入AnalysisResult类型
 interface AnalysisResult {
@@ -39,6 +40,7 @@ interface QueueItem {
   result: AnalysisResult | null;
   error?: string;
   timestamp: number;
+  thinkingProcess?: string[]; // 添加思考过程数组
 }
 
 export const QueueSystem = () => {
@@ -52,6 +54,7 @@ export const QueueSystem = () => {
   const [activeTab, setActiveTab] = useState<'current' | 'history'>('current');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [analysisCompleted, setAnalysisCompleted] = useState(false);
+  const [thinkingProcess, setThinkingProcess] = useState<string[]>([]); // 添加思考过程状态
 
   // 加载设置
   useEffect(() => {
@@ -74,7 +77,8 @@ export const QueueSystem = () => {
       name: currentName.trim(),
       status: 'waiting',
       result: null,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      thinkingProcess: [] // 初始化思考过程
     };
     
     setWaitingQueue(prev => [...prev, newItem]);
@@ -90,6 +94,7 @@ export const QueueSystem = () => {
     const processNextItem = async () => {
       setProcessing(true);
       setAnalysisCompleted(false);
+      setThinkingProcess([]); // 重置思考过程
       
       // 获取队列中的第一个项目
       const currentItem = waitingQueue[0];
@@ -97,31 +102,91 @@ export const QueueSystem = () => {
       // 更新状态为处理中
       const updatedItem: QueueItem = { 
         ...currentItem, 
-        status: 'processing' 
+        status: 'processing',
+        thinkingProcess: [] // 初始化思考过程
       };
       setWaitingQueue(prev => [updatedItem, ...prev.slice(1)]);
       
       try {
         // 获取API设置
         const settings = localStorage.getItem('nameAnalyzerSettings');
-        let apiUrl = '/api/analyze-name';
-        const headers: Record<string, string> = {
-          'Content-Type': 'application/json',
-        };
-        let body: Record<string, unknown> = { name: currentItem.name };
         
-        // 如果有自定义设置，使用自定义API
-        if (settings) {
-          const parsedSettings = JSON.parse(settings);
-          if (parsedSettings.apiUrl && parsedSettings.apiKey) {
-            apiUrl = parsedSettings.apiUrl;
-            headers['Authorization'] = `Bearer ${parsedSettings.apiKey}`;
-            body = {
-              model: parsedSettings.model || 'gpt-3.5-turbo',
-              messages: [
-                {
-                  role: "user",
-                  content: `你是一名资深网络文化专家和网名鉴定师，绝对懂梗，精通中文互联网各种流行语、梗和亚文化。现在需要对网名"${currentItem.name}"进行一次专业且有趣的深度解析。请用接地气、有梗、有趣的语言风格进行分析，同时保持专业性。
+        // 静态模式：使用模拟数据而不是实际API调用
+        const useStaticData = false; // 设置为false禁用静态模式，使用真实API
+        
+        if (useStaticData) {
+          // 模拟API响应延迟
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          
+          // 使用静态模拟数据
+          const mockResult: AnalysisResult = {
+            score: Math.floor(70 + Math.random() * 30),
+            analysis: {
+              style: {
+                score: Math.floor(70 + Math.random() * 30),
+                uniqueness: "这个名字在互联网上的独特性适中，既不会太常见也不会太奇特。",
+                creativity: "名字展现了一定的创意，融合了多种元素。",
+                personality: "名字传达出友好、亲切的个性特点。"
+              },
+              meaning: {
+                score: Math.floor(70 + Math.random() * 30),
+                interpretation: "这个名字可以解读为对美好事物的向往。",
+                connotation: "名字带有积极向上的内涵。",
+                cultural: "在文化背景上，这个名字比较中性，适合多种场合。",
+                overall: "整体而言，这是一个寓意良好的名字。"
+              },
+              usability: {
+                score: Math.floor(70 + Math.random() * 30),
+                readability: "名字读起来朗朗上口，容易记忆。",
+                memorability: "具有一定的记忆点，但不是特别突出。",
+                versatility: "在各种平台上都能使用，没有特殊字符限制。"
+              },
+              summary: `"${currentItem.name}"是一个不错的网名选择，整体评分为${Math.floor(70 + Math.random() * 30)}分。它既有一定的个性，又不会太过奇特，适合日常社交媒体使用。`
+            }
+          };
+          
+          // 更新队列项
+          const completedItem: QueueItem = {
+            ...updatedItem,
+            status: 'completed',
+            result: mockResult
+          };
+          
+          // 更新状态
+          setCurrentResult(mockResult);
+          setAnalysisCompleted(true);
+          
+          // 从等待队列移除并添加到历史队列
+          setWaitingQueue(prev => prev.slice(1));
+          setHistoryQueue(prev => [completedItem, ...prev]);
+          
+          setProcessing(false);
+          return;
+        }
+        
+        // 直接从前端发起请求到大模型API
+        const parsedSettings = settings ? JSON.parse(settings) : null;
+        
+        if (!parsedSettings || !parsedSettings.apiUrl || !parsedSettings.apiKey) {
+          throw new Error('请先在设置中配置API信息');
+        }
+        
+        const apiUrl = parsedSettings.apiUrl;
+        const headers = {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${parsedSettings.apiKey}`
+        };
+        
+        // 清空之前的思考过程
+        setThinkingProcess([]);
+        
+        // 构建请求体
+        const body = {
+          model: parsedSettings.model || 'DeepSeek-R1',
+          messages: [
+            {
+              role: "user",
+              content: `你是一名资深网络文化专家和网名鉴定师，绝对懂梗，精通中文互联网各种流行语、梗和亚文化。现在需要对网名"${currentItem.name}"进行一次专业且有趣的深度解析。请用接地气、有梗、有趣的语言风格进行分析，同时保持专业性。
 
 # 分析维度与评分标准
 1. 风格创意 (30分)
@@ -139,6 +204,8 @@ export const QueueSystem = () => {
 - 传播性：能否轻松"破圈"，成为"爆款"ID？会不会被"挂在嘴边"？
 - 平台适应性：在各大平台会不会被"夹"？是否符合"社区规范"？
 - 记忆锁定：能否让人"一眼难忘"，产生"回头率"？
+
+在返回最终JSON结果之前，请先思考并输出你的分析过程。
 
 请严格按照以下格式返回分析结果，确保 JSON 位于分隔符之间：
 
@@ -169,77 +236,155 @@ export const QueueSystem = () => {
   }
 }
 =====JSON_END=====`
-                }
-              ],
-              temperature: 0.8,
-              response_format: { type: "json_object" }
-            };
+            }
+          ],
+          temperature: 0.8,
+          stream: true // 启用流式输出
+        };
+        
+        try {
+          // 发送请求
+          const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(body),
+          });
+          
+          if (!response.ok) {
+            throw new Error(`请求失败: ${response.status} ${response.statusText}`);
           }
-        }
-        
-        // 发送请求
-        const response = await fetch(apiUrl, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify(body),
-        });
-        
-        if (!response.ok) {
-          throw new Error('分析失败');
-        }
-        
-        const data = await response.json();
-        
-        // 如果使用自定义API，需要解析返回的内容
-        let result = data;
-        if (settings && JSON.parse(settings).apiUrl) {
-          const content = data.choices?.[0]?.message?.content;
-          if (content) {
-            // 尝试提取JSON
-            const jsonMatch = content.match(/=====JSON_START=====([\s\S]*?)=====JSON_END=====/);
-            if (jsonMatch) {
-              result = JSON.parse(jsonMatch[1].trim());
-            } else {
-              // 尝试直接解析整个内容
-              try {
-                result = JSON.parse(content);
-              } catch (e) {
-                console.error('Failed to parse JSON from response:', e);
-                throw new Error('解析结果失败');
+          
+          // 处理流式响应
+          if (response.body) {
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            let result = null;
+            let fullContent = ''; // 存储完整的响应内容
+            let fullThinkingContent = ''; // 存储完整的思考内容
+            
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              
+              const chunk = decoder.decode(value, { stream: true });
+              buffer += chunk;
+              
+              // 处理数据流中的事件
+              const lines = buffer.split('\n');
+              buffer = lines.pop() || '';
+              
+              for (const line of lines) {
+                if (line.trim() === '') continue;
+                if (line.trim() === 'data: [DONE]') continue;
+                
+                let data;
+                try {
+                  // 移除 "data: " 前缀
+                  const jsonStr = line.replace(/^data: /, '').trim();
+                  data = JSON.parse(jsonStr);
+                } catch (e) {
+                  console.error('解析流数据失败:', e, line);
+                  continue;
+                }
+                
+                // 提取内容 - 处理deepseek模型的特殊格式
+                const content = data.choices?.[0]?.delta?.content || '';
+                const reasoningContent = data.choices?.[0]?.delta?.reasoning_content || '';
+                
+                // 累积所有内容
+                fullContent += content;
+                fullContent += reasoningContent;
+                
+                // 如果有思考内容，累积并显示
+                if (reasoningContent) {
+                  fullThinkingContent += reasoningContent;
+                  
+                  // 更新UI显示 - 显示完整的思考内容
+                  setThinkingProcess(() => [fullThinkingContent]);
+                  
+                  // 更新队列项的思考过程 - 保存完整的思考内容
+                  setWaitingQueue(prev => {
+                    if (prev.length === 0 || prev[0].id !== updatedItem.id) return prev;
+                    const newItem = { 
+                      ...prev[0], 
+                      thinkingProcess: [fullThinkingContent] 
+                    };
+                    return [newItem, ...prev.slice(1)];
+                  });
+                }
               }
             }
+            
+            // 从完整内容中提取JSON
+            const jsonMatch = fullContent.match(/=====JSON_START=====([\s\S]*?)=====JSON_END=====/);
+            if (jsonMatch && jsonMatch[1]) {
+              try {
+                result = JSON.parse(jsonMatch[1].trim());
+                console.log('成功从完整内容中提取JSON:', result);
+              } catch (e) {
+                console.error('从完整内容中解析JSON失败:', e);
+              }
+            } else {
+              console.error('未找到JSON标记，完整内容:', fullContent);
+            }
+            
+            // 如果有解析出结果
+            if (result) {
+              // 更新为完成状态
+              const completedItem: QueueItem = { 
+                ...updatedItem, 
+                status: 'completed',
+                result,
+                thinkingProcess: [fullThinkingContent] // 保存完整的思考过程
+              };
+              
+              // 更新状态
+              setCurrentResult(result);
+              setAnalysisCompleted(true);
+              
+              // 从等待队列移除并添加到历史队列
+              setWaitingQueue(prev => prev.slice(1));
+              setHistoryQueue(prev => [completedItem, ...prev]);
+            } else {
+              throw new Error('未能从响应中解析出有效结果');
+            }
+          } else {
+            throw new Error('响应没有可读取的数据流');
           }
+        } catch (error) {
+          console.error('API请求错误:', error);
+          
+          // 更新为错误状态
+          const errorItem: QueueItem = {
+            ...updatedItem,
+            status: 'error',
+            error: error instanceof Error ? error.message : '未知错误'
+          };
+          
+          // 更新队列
+          setWaitingQueue(prev => prev.slice(1));
+          setHistoryQueue(prev => [errorItem, ...prev]);
+          
+          // 显示错误消息
+          alert(`分析失败: ${error instanceof Error ? error.message : '未知错误'}`);
         }
-        
-        // 更新为完成状态
-        const completedItem: QueueItem = { 
-          ...updatedItem, 
-          status: 'completed', 
-          result 
-        };
-        
-        // 从等待队列中移除，添加到历史队列
-        setWaitingQueue(prev => prev.slice(1));
-        setHistoryQueue(prev => [completedItem, ...prev]);
-        
-        // 设置当前结果
-        setCurrentResult(result);
-        setAnalysisCompleted(true);
-        
-        // 如果是在历史标签页，切换到当前标签页显示结果
-        setActiveTab('current');
       } catch (error) {
-        // 处理错误
-        console.error('Error processing request:', error);
-        const errorItem: QueueItem = { 
-          ...updatedItem, 
-          status: 'error', 
-          error: '分析失败' 
+        console.error('处理错误:', error);
+        
+        // 更新为错误状态
+        const errorItem: QueueItem = {
+          ...updatedItem,
+          status: 'error',
+          error: error instanceof Error ? error.message : '未知错误'
         };
         
-        // 从等待队列中移除，添加到历史队列
+        // 更新队列
         setWaitingQueue(prev => prev.slice(1));
         setHistoryQueue(prev => [errorItem, ...prev]);
+        
+        // 显示错误消息
+        alert(`处理失败: ${error instanceof Error ? error.message : '未知错误'}`);
       } finally {
         setProcessing(false);
       }
@@ -485,24 +630,32 @@ export const QueueSystem = () => {
         {currentResult ? (
           <NameAnalysis result={currentResult} />
         ) : (
-          <div className="modern-card p-8 text-center">
-            <div className="text-gray-500 mb-6">
-              <svg className="w-20 h-20 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-              </svg>
-              <h3 className="text-2xl font-semibold text-gray-700 mb-3">等待分析结果</h3>
-              <p className="text-gray-500 max-w-md mx-auto">
-                添加一个网名到队列中开始分析，我们将从多个维度对网名进行专业评测
-              </p>
-            </div>
-            <div className="flex justify-center">
-              <button
-                onClick={() => document.querySelector('input')?.focus()}
-                className="btn-primary"
-              >
-                开始分析
-              </button>
-            </div>
+          <div className="modern-card p-6 flex flex-col h-full">
+            {processing && waitingQueue.length > 0 ? (
+              <div className="flex-1 flex items-center justify-center">
+                <LoadingState name={waitingQueue[0].name} thinkingProcess={thinkingProcess} />
+              </div>
+            ) : (
+              <div className="text-center flex-1 flex flex-col items-center justify-center p-8">
+                <div className="text-gray-500 mb-6">
+                  <svg className="w-20 h-20 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                  </svg>
+                  <h3 className="text-2xl font-semibold text-gray-700 mb-3">等待分析结果</h3>
+                  <p className="text-gray-500 max-w-md mx-auto">
+                    添加一个网名到队列中开始分析，我们将从多个维度对网名进行专业评测
+                  </p>
+                </div>
+                <div className="flex justify-center">
+                  <button
+                    onClick={() => document.querySelector('input')?.focus()}
+                    className="btn-primary"
+                  >
+                    开始分析
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
