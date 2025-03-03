@@ -5,19 +5,40 @@ import { NameAnalysis } from './NameAnalysis';
 import { Settings } from './Settings';
 import { CatInteraction } from './CatInteraction';
 
+// 从NameAnalysis导入AnalysisResult类型
+interface AnalysisResult {
+  score: number;
+  analysis: {
+    style: {
+      score: number;
+      uniqueness: string;
+      creativity: string;
+      personality: string;
+    };
+    meaning: {
+      score: number;
+      interpretation: string;
+      connotation: string;
+      cultural: string;
+      overall: string;
+    };
+    usability: {
+      score: number;
+      readability: string;
+      memorability: string;
+      versatility: string;
+    };
+    summary: string;
+  };
+}
+
 interface QueueItem {
   id: string;
   name: string;
   status: 'waiting' | 'processing' | 'completed' | 'error';
-  result: any | null;
+  result: AnalysisResult | null;
   error?: string;
   timestamp: number;
-}
-
-interface ApiSettings {
-  apiUrl: string;
-  apiKey: string;
-  model: string;
 }
 
 export const QueueSystem = () => {
@@ -26,23 +47,18 @@ export const QueueSystem = () => {
   const [historyQueue, setHistoryQueue] = useState<QueueItem[]>([]);
   const [currentName, setCurrentName] = useState('');
   const [processing, setProcessing] = useState(false);
-  const [currentResult, setCurrentResult] = useState<any | null>(null);
+  const [currentResult, setCurrentResult] = useState<AnalysisResult | null>(null);
   const [selectedHistoryId, setSelectedHistoryId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'current' | 'history'>('current');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [analysisCompleted, setAnalysisCompleted] = useState(false);
-  const [apiSettings, setApiSettings] = useState<ApiSettings>({
-    apiUrl: '',
-    apiKey: '',
-    model: 'gpt-3.5-turbo'
-  });
 
   // 加载设置
   useEffect(() => {
     const savedSettings = localStorage.getItem('nameAnalyzerSettings');
     if (savedSettings) {
       try {
-        setApiSettings(JSON.parse(savedSettings));
+        // 解析设置
       } catch (e) {
         console.error('Failed to parse settings:', e);
       }
@@ -89,10 +105,10 @@ export const QueueSystem = () => {
         // 获取API设置
         const settings = localStorage.getItem('nameAnalyzerSettings');
         let apiUrl = '/api/analyze-name';
-        let headers: Record<string, string> = {
+        const headers: Record<string, string> = {
           'Content-Type': 'application/json',
         };
-        let body: any = { name: currentItem.name };
+        let body: Record<string, unknown> = { name: currentItem.name };
         
         // 如果有自定义设置，使用自定义API
         if (settings) {

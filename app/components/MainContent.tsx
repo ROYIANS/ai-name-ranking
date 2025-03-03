@@ -33,7 +33,8 @@ export const MainContent = () => {
 
       const data = await response.json();
       setResult(data);
-    } catch (err) {
+    } catch (error) {
+      console.error('分析失败:', error);
       setError('分析过程中出现错误，请稍后重试');
     } finally {
       setLoading(false);

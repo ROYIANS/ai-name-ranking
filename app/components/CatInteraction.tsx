@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface CatInteractionProps {
@@ -10,7 +10,7 @@ interface CatInteractionProps {
   inputValue: string;
 }
 
-export const CatInteraction = ({ isProcessing, isCompleted, onReset, inputValue }: CatInteractionProps) => {
+export const CatInteraction = ({ isProcessing, isCompleted, inputValue }: CatInteractionProps) => {
   const [showBubble, setShowBubble] = useState(false);
   const [catMessage, setCatMessage] = useState('');
   const [buttonFell, setButtonFell] = useState(false);
@@ -20,26 +20,26 @@ export const CatInteraction = ({ isProcessing, isCompleted, onReset, inputValue 
   const purrRef = useRef<HTMLAudioElement | null>(null);
 
   // 猫咪消息
-  const idleMessages = [
+  const idleMessages = useMemo(() => [
     '喵～有什么网名想让我分析的吗？',
     '喵喵～输入一个网名，我来帮你分析！',
     '喵～我可是专业的网名分析猫哦！',
     '喵喵喵～等你输入网名呢！'
-  ];
+  ], []);
 
-  const thinkingMessages = [
+  const thinkingMessages = useMemo(() => [
     '呼噜噜...正在思考中...',
     '呼噜噜...这个名字有点意思...',
     '呼噜噜...让我好好想想...',
     '呼噜噜...分析中...'
-  ];
+  ], []);
 
-  const happyMessages = [
+  const happyMessages = useMemo(() => [
     '喵！分析完成了！',
     '喵喵喵！我有结果啦！',
     '喵～这个名字我已经看透了！',
     '喵喵！快看我的分析结果！'
-  ];
+  ], []);
 
   // 随机选择消息
   const getRandomMessage = (messages: string[]) => {
@@ -69,7 +69,7 @@ export const CatInteraction = ({ isProcessing, isCompleted, onReset, inputValue 
       setCatMessage(getRandomMessage(thinkingMessages));
       setShowBubble(true);
     }
-  }, [isProcessing, buttonFell]);
+  }, [isProcessing, buttonFell, thinkingMessages]);
 
   // 处理完成动画
   useEffect(() => {
@@ -98,7 +98,7 @@ export const CatInteraction = ({ isProcessing, isCompleted, onReset, inputValue 
       
       return () => clearTimeout(timer);
     }
-  }, [isCompleted, buttonFell]);
+  }, [isCompleted, buttonFell, happyMessages]);
 
   // 初始化时显示闲置消息
   useEffect(() => {
@@ -114,7 +114,7 @@ export const CatInteraction = ({ isProcessing, isCompleted, onReset, inputValue 
       
       return () => clearTimeout(timer);
     }
-  }, [isProcessing, isCompleted, inputValue]);
+  }, [isProcessing, isCompleted, inputValue, idleMessages]);
 
   return (
     <div className="relative w-full h-64 flex items-end justify-center mb-5">

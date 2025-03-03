@@ -1,6 +1,5 @@
 'use client';
 
-import { motion } from 'framer-motion';
 import { AnalysisItem } from './AnalysisItem';
 import { Footer } from './Footer';
 

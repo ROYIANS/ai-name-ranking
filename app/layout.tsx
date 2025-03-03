@@ -1,5 +1,12 @@
 import './globals.css'
 import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
+
+const inter = Inter({ 
+  subsets: ['latin'],
+  display: 'swap',
+  weight: ['400', '500', '600', '700']
+})
 
 export const metadata: Metadata = {
   title: '网名分析 - 专业网名评测工具',
@@ -12,12 +19,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="zh">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-      </head>
+    <html lang="zh" className={inter.className}>
       <body>
         {children}
       </body>

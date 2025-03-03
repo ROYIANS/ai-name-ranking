@@ -138,7 +138,7 @@ export const LoadingState = ({ name }: LoadingStateProps) => {
         </div>
         
         <h3 className="text-xl font-bold text-gray-800 mb-2">
-          正在分析 "{name}" 中
+          正在分析 &quot;{name}&quot; 中
         </h3>
         
         <div className="text-sky-600 font-medium mb-4">
