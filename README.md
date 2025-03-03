@@ -1,36 +1,108 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AI网名鉴定师
 
-## Getting Started
+一个有趣的网名分析工具，使用AI深度解析网名的风格、寓意和实用性，并给出专业评分。
 
-First, run the development server:
+## 功能特点
 
+- 使用大语言模型进行网名深度分析
+- 实时显示AI思考过程
+- 支持多个网名的队列分析
+- 历史记录查看
+- 完全静态部署，无需后端服务器
+
+## 部署指南
+
+### 本地开发
+
+1. 克隆仓库
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone <仓库地址>
+cd ai-name-ranking
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. 安装依赖
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. 启动开发服务器
+```bash
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 静态部署
 
-## Learn More
+本项目可以完全静态部署，所有API调用直接从浏览器发起。
 
-To learn more about Next.js, take a look at the following resources:
+#### 构建静态文件
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm run build
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+构建完成后，静态文件将生成在`out`目录中。
 
-## Deploy on Vercel
+#### 部署选项
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. **Vercel部署**（推荐）
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+最简单的方式是使用Vercel部署：
+
+```bash
+npm install -g vercel
+vercel
+```
+
+2. **GitHub Pages部署**
+
+将`out`目录推送到GitHub仓库的`gh-pages`分支：
+
+```bash
+# 安装gh-pages工具
+npm install -g gh-pages
+
+# 部署
+gh-pages -d out
+```
+
+3. **Netlify部署**
+
+- 在Netlify创建新站点
+- 选择GitHub仓库
+- 构建命令设置为`npm run build`
+- 发布目录设置为`out`
+
+4. **其他静态托管服务**
+
+可以将`out`目录上传到任何静态文件托管服务，如：
+- 阿里云OSS
+- 腾讯云COS
+- 七牛云
+- AWS S3
+
+5. **本地测试静态部署**
+
+```bash
+npm run serve
+```
+
+## 使用说明
+
+1. 在设置中配置API信息（API URL和API Key）
+2. 输入要分析的网名
+3. 点击"开始分析"按钮
+4. 观看AI实时思考过程
+5. 查看分析结果
+
+## 注意事项
+
+- 需要自行提供大语言模型API的访问凭证
+- 默认使用DeepSeek-R1模型，也可以在设置中更改
+- 所有API调用直接从浏览器发起，请确保API密钥的安全性
+
+## 技术栈
+
+- Next.js 15
+- React
+- Tailwind CSS
+- TypeScript
